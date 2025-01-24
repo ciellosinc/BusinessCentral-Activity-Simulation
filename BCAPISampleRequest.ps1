@@ -1,27 +1,37 @@
-$tenantDomain = 'f891245c-c75d-4431-8f28-f888c6dc51fb' 
-$ApplicationClientId = '0ccea774-8049-0000-0000-d8f302477acb' 
-$ApplicationClientSecretKey = 'KK0*******************************************Zlb8M'
+$AzureApplication = @();
+$AzureApplication += [PSCustomObject]@{
+    Name     = 'BC 01'
+    TenantId = '46e85934-1fab-0000-0000-de92ce1fd81a';
+    ClientId = '4de29c86-5f7b-0000-0000-26ef0082e443';
+    SecretKey = 'Rs*********************************b-6';
+}
+
+$AzureApp = $AzureApplication | Get-Random  #Because there is only one record in array, then only this record will be selected
+Write-Host "  Azure App:" $AzureApp.Name -ForegroundColor Yellow
+
+$tenantDomain = $AzureApp.TenantId
+$ApplicationClientId = $AzureApp.ClientId 
+$ApplicationClientSecretKey = $AzureApp.SecretKey
 $CompanyName = '31b55c63-7cb7-ef11-b8f6-6045bdc89e7b' #or 31b55c63-7cb7-ef11-b8f6-6045bdc89e7b or 'CRONUS USA, Inc.'
+$EnvironmentName = "Sandbox"
 
 [uri]$url =  'https://api.businesscentral.dynamics.com/' 
 
 $BCAPIType = 'V2' # 'V2' or 'ODATA'
 $isCompaniesSectionNeeded = $true
 
-#$DataEntity = 'companies'; $isCompaniesSectionNeeded = $false
 #$DataEntity = 'Power_BI_Customer_List'
 #$DataEntity = 'Power_BI_Sales_List'
 #$DataEntity = 'salesInvoices'
-#$DataEntity = 'salesShipments'
-$DataEntity = 'salesOrders'
-
+$DataEntity = 'companies'; $isCompaniesSectionNeeded = $false
+#$DataEntity = 'salesOrders'
 
 [System.UriBuilder] $ListRecordsURL = $url
 
 switch -Exact ($BCAPIType) {
     'V2' { 
         #Write-Host "   Will use API V2" -ForegroundColor Yellow
-        $urlPathPart = '/v2.0/'+ $tenantDomain +'/Production/api/v2.0'  #for Business Central API V2    
+        $urlPathPart = '/v2.0/'+ $tenantDomain +'/'+ $EnvironmentName +'/api/v2.0'  #for Business Central API V2    
         $CompanyURLPart = 'companies(' + $CompanyName +')' 
 
         if($isCompaniesSectionNeeded) {
@@ -33,7 +43,7 @@ switch -Exact ($BCAPIType) {
     }
     'ODATA' { 
         #Write-Host "   Will use OData API" -ForegroundColor Yellow
-        $urlPathPart = '/v2.0/'+ $tenantDomain +'/Production/ODataV4'  #for Business Central OData API    '/ODataV4/Company('mycompany')/salesDocumentLines'
+        $urlPathPart = '/v2.0/'+ $tenantDomain +'/'+ $EnvironmentName +'/ODataV4'  #for Business Central OData API    '/ODataV4/Company('mycompany')/salesDocumentLines'
          
         $CompanyURLPart = 'Company(' +"'"+ $CompanyName +"'"+ ')' 
         if($isCompaniesSectionNeeded) {
@@ -80,10 +90,14 @@ $headers = @{
     "Authorization" = "Bearer $Bearer"
     "Host" = "$($url.Host)"
     "Accept-Language" = "en-US"
-    #"Data-Access-Intent" = "ReadOnly"
+    "Data-Access-Intent" = "ReadOnly"
     "Prefer" = "odata.maxpagesize=20000"
 }
  
+#    "Prefer" = "odata.include-annotations=""OData.Community.Display.V1.FormattedValue"""
+
+#$ListRecordsURL.Query = '$top=10'
+
 $resultREST=$null
 [string]$RequestURL = $ListRecordsURL.Uri.AbsoluteUri
 
